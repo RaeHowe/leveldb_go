@@ -10,6 +10,7 @@ import (
 func Test_MemTable(t *testing.T) {
 	memTable := New()
 	memTable.Add(1234567, internal.TypeValue, []byte("aadsa34a"), []byte("bb23b3423"))
+	memTable.Add(1234567, internal.TypeValue, []byte("aadsa34a"), []byte("bb23b34232"))
 	value, _ := memTable.Get([]byte("aadsa34a"))
 	fmt.Println(string(value))
 	fmt.Println(memTable.ApproximateMemoryUsage())

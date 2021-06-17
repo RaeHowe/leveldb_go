@@ -49,3 +49,7 @@ func (memTable *MemTable) Get(key []byte) ([]byte, error) {
 func (memTable *MemTable) ApproximateMemoryUsage() uint64 {
 	return memTable.memoryUsage
 }
+
+func (memTable *MemTable) GetMem() *skiplist.SkipList {
+	return memTable.table
+}

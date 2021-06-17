@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	MAX_BLOCK_SIZE = 4 * 1024
+	MAX_BLOCK_SIZE = 4 * 1024 // 4K
 )
 
 type TableBuilder struct {
@@ -51,6 +51,7 @@ func (builder *TableBuilder) Add(internalKey *internal.InternalKey) {
 
 	builder.numEntries++
 	builder.dataBlockBuilder.Add(internalKey)
+	// 4KB 刷盘一次
 	if builder.dataBlockBuilder.CurrentSizeEstimate() > MAX_BLOCK_SIZE {
 		builder.flush()
 	}

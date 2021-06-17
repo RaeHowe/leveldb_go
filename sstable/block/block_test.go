@@ -20,9 +20,9 @@ func Test_SsTable(t *testing.T) {
 	block := New(p)
 	it := block.NewIterator()
 
-	it.Seek([]byte("1244"))
+	it.Seek([]byte("124"))
 	if it.Valid() {
-		if string(it.InternalKey().UserKey) != "125" {
+		if string(it.InternalKey().UserKey) != "1245" {
 			t.Fail()
 		}
 

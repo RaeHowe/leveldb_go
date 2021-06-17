@@ -16,6 +16,7 @@ type BlockHandle struct {
 	Size   uint32
 }
 
+//结构体数据转成字符串
 func (blockHandle *BlockHandle) EncodeToBytes() []byte {
 	p := make([]byte, 8)
 	binary.LittleEndian.PutUint32(p, blockHandle.Offset)
@@ -23,6 +24,7 @@ func (blockHandle *BlockHandle) EncodeToBytes() []byte {
 	return p
 }
 
+//字符传转结构体数据
 func (blockHandle *BlockHandle) DecodeFromBytes(p []byte) {
 	if len(p) == 8 {
 		blockHandle.Offset = binary.LittleEndian.Uint32(p)
@@ -48,6 +50,11 @@ type Footer struct {
 	IndexHandle     BlockHandle
 }
 
+// ...DATA....
+// ...DATA....
+// | mete_offset  | mete_size  |  8B
+// | index_offset | index_size |  8B
+// |        magic_number       |  8B
 func (footer *Footer) Size() int {
 	// add magic size
 	return binary.Size(footer) + 8

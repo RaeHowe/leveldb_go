@@ -8,6 +8,8 @@ type LevelDb interface {
 	Put(key, value []byte) error
 	Get(key []byte) ([]byte, error)
 	Delete(key []byte) error
+	PrintMem()
+	PrintVersion()
 }
 
 type Iterator interface {

@@ -9,7 +9,7 @@ import (
 )
 
 func Test_SsTable(t *testing.T) {
-	builder := NewTableBuilder("D:\\000123.ldb")
+	builder := NewTableBuilder("/Users/liuhuan210/go/src/github.com/merlin82/leveldb/test/000123.ldb")
 	item := internal.NewInternalKey(1, internal.TypeValue, []byte("123"), []byte("1234"))
 	builder.Add(item)
 	item = internal.NewInternalKey(2, internal.TypeValue, []byte("124"), []byte("1245"))
@@ -18,7 +18,7 @@ func Test_SsTable(t *testing.T) {
 	builder.Add(item)
 	builder.Finish()
 
-	table, err := Open("D:\\000123.ldb")
+	table, err := Open("/Users/liuhuan210/go/src/github.com/merlin82/leveldb/test/000123.ldb")
 	fmt.Println(err)
 	if err == nil {
 		fmt.Println(table.index)

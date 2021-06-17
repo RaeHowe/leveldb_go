@@ -17,26 +17,31 @@ type SsTable struct {
 func Open(fileName string) (*SsTable, error) {
 	var table SsTable
 	var err error
+	// sstbale文件描述符
 	table.file, err = os.Open(fileName)
 	if err != nil {
 		return nil, err
 	}
+	// 文件大小
 	stat, _ := table.file.Stat()
 	// Read the footer block
 	footerSize := int64(table.footer.Size())
 	if stat.Size() < footerSize {
 		return nil, internal.ErrTableFileTooShort
 	}
-
+	// 最后24B字节数据
 	_, err = table.file.Seek(-footerSize, io.SeekEnd)
 	if err != nil {
 		return nil, err
 	}
+	// 24B数据转为footer结构体数据
 	err = table.footer.DecodeFrom(table.file)
 	if err != nil {
 		return nil, err
 	}
-	// Read the index block
+	// footer里面有meta和index的offset和size数据
+	// 现在只实现了index没有meta，否则也需要读取
+	// 读取第一个block
 	table.index = table.readBlock(table.footer.IndexHandle)
 	return &table, nil
 }

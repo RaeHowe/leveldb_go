@@ -32,7 +32,11 @@ func (it *Iterator) Value() []byte {
 // Advances to the next position.
 // REQUIRES: Valid()
 func (it *Iterator) Next() {
+	// it.dataIter.index++
 	it.dataIter.Next()
+	// it.indexIter.index++
+	// it.initDataBlock
+	// it.dataIter.index = 0
 	it.skipEmptyDataBlocksForward()
 }
 

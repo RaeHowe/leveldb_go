@@ -14,6 +14,7 @@ type TableCache struct {
 	cache  *lru.Cache
 }
 
+// sstable直接缓存到内存，一个文件4MB，缓存990个
 func NewTableCache(dbName string) *TableCache {
 	var tableCache TableCache
 	tableCache.dbName = dbName
@@ -21,6 +22,7 @@ func NewTableCache(dbName string) *TableCache {
 	return &tableCache
 }
 
+// 迭代查询sstable里面的内容
 func (tableCache *TableCache) NewIterator(fileNum uint64) *sstable.Iterator {
 	table, _ := tableCache.findTable(fileNum)
 	if table != nil {
@@ -28,6 +30,8 @@ func (tableCache *TableCache) NewIterator(fileNum uint64) *sstable.Iterator {
 	}
 	return nil
 }
+
+//通过缓存中查sstable数据，如果没有先读后加入
 func (tableCache *TableCache) Get(fileNum uint64, key []byte) ([]byte, error) {
 	table, err := tableCache.findTable(fileNum)
 	if table != nil {
@@ -37,10 +41,12 @@ func (tableCache *TableCache) Get(fileNum uint64, key []byte) ([]byte, error) {
 	return nil, err
 }
 
+//删除缓存
 func (tableCache *TableCache) Evict(fileNum uint64) {
 	tableCache.cache.Remove(fileNum)
 }
 
+//查数据
 func (tableCache *TableCache) findTable(fileNum uint64) (*sstable.SsTable, error) {
 	tableCache.mu.Lock()
 	defer tableCache.mu.Unlock()

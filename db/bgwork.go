@@ -10,41 +10,46 @@ import (
 )
 
 func (db *Db) maybeScheduleCompaction() {
-	if db.bgCompactionScheduled {
+	if db.bgCompactionScheduled { // 最多只发起一个后台协程来写数据
 		return
 	}
 	db.bgCompactionScheduled = true
-	go db.backgroundCall()
+	go func() {
+		db.mu.Lock()
+		defer db.mu.Unlock()
+		db.backgroundCompaction()
+		db.bgCompactionScheduled = false
+		db.cond.Broadcast()
+	}()
 }
 
-func (db *Db) backgroundCall() {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	db.backgroundCompaction()
-	db.bgCompactionScheduled = false
-	db.cond.Broadcast()
-}
-
+// https://wingsxdu.com/post/database/leveldb/#tablecache
 func (db *Db) backgroundCompaction() {
-	imm := db.imm
-	version := db.current.Copy()
-	db.mu.Unlock()
+	// 先复制一份，然后就可以释放锁，用户可以继续写。但是提交会卡主，需要等到imm完全写到文件后释放。
+	imm := db.imm                // 可以不用深拷贝，因为imm未刷盘时不会有新的imm生成 TODO 是这个意思?
+	version := db.current.Copy() // 需要深拷贝，虽然不会有新的sstable生成，但是version字段会更新，如果有查询操作会出现问题 TODO 是这个意思?
+	//db.mu.Unlock()
 
-	// minor compaction
+	// minor compaction：写imm到sstable，L0文件之间是没有关系的。
+	// 如果发现sstable可以属于L1的sstable子集，优先向下合并。
 	if imm != nil {
 		version.WriteLevel0Table(imm)
 	}
-	// major compaction
+	// major compaction：合并，L1之后的sstable文件之前是单调增的
 	for version.DoCompactionWork() {
+		// 每次合并后打印下version信息，除了看，没啥用
 		version.Log()
 	}
+	// 写新的MANIFEST文件信息，因为version信息已经变更，需要及时更新元信息
 	descriptorNumber, _ := version.Save()
+	// 更新CURRENT文件内容
 	db.SetCurrentFile(descriptorNumber)
-	db.mu.Lock()
+	//db.mu.Lock()
 	db.imm = nil
 	db.current = version
 }
 
+//更新current文件里面的值，为了保证原子操作，此处用mv来实现
 func (db *Db) SetCurrentFile(descriptorNumber uint64) {
 	tmp := internal.TempFileName(db.name, descriptorNumber)
 	ioutil.WriteFile(tmp, []byte(fmt.Sprintf("%d", descriptorNumber)), 0600)

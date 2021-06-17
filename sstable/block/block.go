@@ -12,10 +12,11 @@ type Block struct {
 }
 
 func New(p []byte) *Block {
-	var block Block
+
 	data := bytes.NewBuffer(p)
 	counter := binary.LittleEndian.Uint32(p[len(p)-4:])
 
+	var block Block
 	for i := uint32(0); i < counter; i++ {
 		var item internal.InternalKey
 		err := item.DecodeFrom(data)

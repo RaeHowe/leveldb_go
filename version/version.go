@@ -1,6 +1,7 @@
 package version
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"sort"
@@ -9,17 +10,21 @@ import (
 )
 
 type FileMetaData struct {
-	allowSeeks uint64
+	allowSeeks uint64 //最多可以扫描该文件内容的次数
 	number     uint64
 	fileSize   uint64
 	smallest   *internal.InternalKey
 	largest    *internal.InternalKey
 }
 
+func (fd *FileMetaData) Number() uint64 {
+	return fd.number
+}
+
 type Version struct {
 	tableCache     *TableCache
 	nextFileNumber uint64
-	seq            uint64
+	seq            uint64 // lsn
 	files          [internal.NumLevels][]*FileMetaData
 	// Per-level key at which the next compaction at that level should start.
 	// Either an empty string, or a valid InternalKey.
@@ -44,6 +49,7 @@ func Load(dbName string, number uint64) (*Version, error) {
 	return v, v.DecodeFrom(file)
 }
 
+//当前version信息写到文件中
 func (v *Version) Save() (uint64, error) {
 	tmp := v.nextFileNumber
 	fileName := internal.DescriptorFileName(v.tableCache.dbName, v.nextFileNumber)
@@ -57,9 +63,11 @@ func (v *Version) Save() (uint64, error) {
 }
 func (v *Version) Log() {
 	for level := 0; level < internal.NumLevels; level++ {
+		ss := ""
 		for i := 0; i < len(v.files[level]); i++ {
-			log.Printf("version[%d]: %d", level, v.files[level][i].number)
+			ss += fmt.Sprintf("%05d ", v.files[level][i].number)
 		}
+		log.Printf("version level = [%d]: %s\n", level, ss)
 	}
 }
 func (v *Version) Copy() *Version {
@@ -154,4 +162,16 @@ func (v *Version) findFile(files []*FileMetaData, key []byte) int {
 		}
 	}
 	return right
+}
+
+func (v *Version) Print() string {
+	ss := ""
+	for level := 0; level < internal.NumLevels; level++ {
+		sss := ""
+		for _, fd := range v.files[level] {
+			sss += fmt.Sprintf("%05d.ldb ", fd.Number())
+		}
+		ss += fmt.Sprintf("[level = %d] %s\n", level, sss)
+	}
+	return ss
 }

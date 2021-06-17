@@ -1,6 +1,8 @@
 package skiplist
 
 import (
+	"fmt"
+	"github.com/merlin82/leveldb/internal"
 	"math/rand"
 	"sync"
 
@@ -27,6 +29,9 @@ func New(comp utils.Comparator) *SkipList {
 	return &skiplist
 }
 
+// 时间复杂度 O(log n)
+// 类似单链表的添加节点操作，但是跳表需要考虑多个前驱和后继
+// 不需要实现删除，因为sstable会merge
 func (list *SkipList) Insert(key interface{}) {
 	list.mu.Lock()
 	defer list.mu.Unlock()
@@ -46,6 +51,7 @@ func (list *SkipList) Insert(key interface{}) {
 	}
 }
 
+// 时间复杂度 O(log n)
 func (list *SkipList) Contains(key interface{}) bool {
 	list.mu.RLock()
 	defer list.mu.RUnlock()
@@ -64,12 +70,14 @@ func (list *SkipList) NewIterator() *Iterator {
 
 func (list *SkipList) randomHeight() int {
 	height := 1
+	// 25% 的概率会变成父节点
 	for height < kMaxHeight && (rand.Intn(kBranching) == 0) {
 		height++
 	}
 	return height
 }
 
+// 记录大于等于key的前驱，如果是单链表则为一个node即可，但是跳表是多层需要记录level和node的关系
 func (list *SkipList) findGreaterOrEqual(key interface{}) (*Node, [kMaxHeight]*Node) {
 	var prev [kMaxHeight]*Node
 	x := list.head
@@ -128,4 +136,18 @@ func (list *SkipList) findlast() *Node {
 
 func (list *SkipList) keyIsAfterNode(key interface{}, n *Node) bool {
 	return (n != nil) && (list.comparator(n.key, key) < 0)
+}
+
+func (list *SkipList) Print() string {
+	ss := ""
+	for level := 0; level < kMaxHeight; level++ {
+		sss := ""
+		x := list.head.getNext(level)
+		for x != nil {
+			sss += fmt.Sprintf("%s-v%d ", x.key.(*internal.InternalKey).UserKey, x.key.(*internal.InternalKey).Seq)
+			x = x.getNext(level)
+		}
+		ss = fmt.Sprintf("[level = %02d] %s\n", level, sss) + ss
+	}
+	return ss
 }
