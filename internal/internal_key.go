@@ -64,6 +64,10 @@ func InternalKeyComparator(a, b interface{}) int {
 	//    increasing user key (according to user-supplied comparator)
 	//    decreasing sequence number
 	//    decreasing type (though sequence# should be enough to disambiguate)
+	/*
+		先根据user key排序；如果user key相同，则根据seq排序；seq相同根据操作类型排序
+
+	*/
 	aKey := a.(*InternalKey)
 	bKey := b.(*InternalKey)
 	r := UserKeyComparator(aKey.UserKey, bKey.UserKey)
