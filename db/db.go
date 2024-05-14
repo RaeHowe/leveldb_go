@@ -66,15 +66,18 @@ func (db *Db) Put(key, value []byte) error {
 
 func (db *Db) Get(key []byte) ([]byte, error) {
 	db.mu.Lock()
-	mem := db.mem
-	imm := db.mem
+	mem := db.mem //memtable
+	imm := db.mem //immetable
 	current := db.current
 	db.mu.Unlock()
+
+	//从memtable中去读取
 	value, err := mem.Get(key)
 	if err != internal.ErrNotFound {
 		return value, err
 	}
 
+	//从imm中读取数据
 	if imm != nil {
 		value, err := imm.Get(key)
 		if err != internal.ErrNotFound {
@@ -96,17 +99,24 @@ func (db *Db) Delete(key []byte) error {
 }
 
 // 写入速度下降的case：
-//    当0层sstable文件多余8个时候，用户写会被降低；
+//
+//	当0层sstable文件多余8个时候，用户写会被降低；
+//
 // 写入被限制的case：
-//    当0层sstable文件大于12个停止写入；
-//    mem超过阈值转为imm，imm未持久化到sstable停止写入
+//
+//	当0层sstable文件大于12个停止写入；
+//	mem超过阈值转为imm，imm未持久化到sstable停止写入
+//
 // 触发合并的两个case:
-//	  0层超过4个文件开始合并
-//	  其他层数据库超过层级最大值开始合并
+//
+//	0层超过4个文件开始合并
+//	其他层数据库超过层级最大值开始合并
+//
 // 其他性能上的限制：
-//    加锁，导致写只能串行；
-//    cond引入导致可以写，但是提交时间会变长（返回时间变长）
-//    其他场景通过内存拷本副本方式，降低block时间
+//
+//	加锁，导致写只能串行；
+//	cond引入导致可以写，但是提交时间会变长（返回时间变长）
+//	其他场景通过内存拷本副本方式，降低block时间
 func (db *Db) makeRoomForWrite() (uint64, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()

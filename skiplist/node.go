@@ -1,5 +1,6 @@
 package skiplist
 
+// Node 由于跳表是单链表，所以只有next
 type Node struct {
 	key  interface{}
 	next []*Node

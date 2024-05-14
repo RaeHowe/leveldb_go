@@ -15,17 +15,17 @@ const (
 )
 
 type SkipList struct {
-	maxHeight  int
-	head       *Node
-	comparator utils.Comparator
-	mu         sync.RWMutex
+	maxHeight  int              //跳表最大高度
+	head       *Node            //起始节点
+	comparator utils.Comparator //比较
+	mu         sync.RWMutex     //互斥锁
 }
 
 func New(comp utils.Comparator) *SkipList {
 	var skiplist SkipList
 	skiplist.head = newNode(nil, kMaxHeight)
-	skiplist.maxHeight = 1
-	skiplist.comparator = comp
+	skiplist.maxHeight = 1     //当前的最大高度为1
+	skiplist.comparator = comp //比较器
 	return &skiplist
 }
 
@@ -79,13 +79,13 @@ func (list *SkipList) randomHeight() int {
 
 // 记录大于等于key的前驱，如果是单链表则为一个node即可，但是跳表是多层需要记录level和node的关系
 func (list *SkipList) findGreaterOrEqual(key interface{}) (*Node, [kMaxHeight]*Node) {
-	var prev [kMaxHeight]*Node
+	var prev [kMaxHeight]*Node // 定长Node类型数组
 	x := list.head
-	level := list.maxHeight - 1
+	level := list.maxHeight - 1 // 高度是3， level最高层是2
 	for true {
 		next := x.getNext(level)
 		if list.keyIsAfterNode(key, next) {
-			x = next
+			x = next //如果keyIsAfterNode返回的值为-1，就代表得到了期望的结果。
 		} else {
 			prev[level] = x
 			if level == 0 {
@@ -135,7 +135,7 @@ func (list *SkipList) findlast() *Node {
 }
 
 func (list *SkipList) keyIsAfterNode(key interface{}, n *Node) bool {
-	return (n != nil) && (list.comparator(n.key, key) < 0)
+	return (n != nil) && (list.comparator(n.key, key) < 0) //小于0就说明比较的结果需要为-1，
 }
 
 func (list *SkipList) Print() string {
