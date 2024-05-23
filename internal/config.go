@@ -10,7 +10,7 @@ const (
 
 	//Write_buffer_size        = 4 << 20 // 4MB
 	Write_buffer_size     = 4 << 7 // 为了实验此处小点
-	NumLevels             = 7
+	NumLevels             = 7      //sst一共层数
 	MaxOpenFiles          = 1000
 	NumNonTableCacheFiles = 10
 	MaxMemCompactLevel    = 0

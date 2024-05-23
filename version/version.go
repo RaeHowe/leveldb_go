@@ -11,10 +11,10 @@ import (
 
 type FileMetaData struct {
 	allowSeeks uint64 //最多可以扫描该文件内容的次数
-	number     uint64
+	number     uint64 //文件数量
 	fileSize   uint64
-	smallest   *internal.InternalKey
-	largest    *internal.InternalKey
+	smallest   *internal.InternalKey //key的最小值起始值
+	largest    *internal.InternalKey //key的最大值终点值
 }
 
 func (fd *FileMetaData) Number() uint64 {
@@ -49,7 +49,7 @@ func Load(dbName string, number uint64) (*Version, error) {
 	return v, v.DecodeFrom(file)
 }
 
-//当前version信息写到文件中
+// 当前version信息写到文件中
 func (v *Version) Save() (uint64, error) {
 	tmp := v.nextFileNumber
 	fileName := internal.DescriptorFileName(v.tableCache.dbName, v.nextFileNumber)
@@ -148,7 +148,7 @@ func (v *Version) Get(key []byte) ([]byte, error) {
 func (v *Version) findFile(files []*FileMetaData, key []byte) int {
 	left := 0
 	right := len(files)
-	for left < right {
+	for left < right { //二分查找
 		mid := (left + right) / 2
 		f := files[mid]
 		if internal.UserKeyComparator(f.largest.UserKey, key) < 0 {

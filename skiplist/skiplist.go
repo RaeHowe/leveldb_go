@@ -37,6 +37,8 @@ func (list *SkipList) Insert(key interface{}) {
 	defer list.mu.Unlock()
 
 	_, prev := list.findGreaterOrEqual(key)
+	//跳表是通过随机函数来决定新插入的数据除了放置在数据层的链表中，还放置到哪些索引层中。
+	//比如随机函数生成了值 K，那我们就将这个结点添加到第一级到第 K 级这 K 级索引中。
 	height := list.randomHeight()
 	if height > list.maxHeight {
 		for i := list.maxHeight; i < height; i++ {

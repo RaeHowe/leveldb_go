@@ -24,8 +24,8 @@ func (memTable *MemTable) NewIterator() *Iterator {
 func (memTable *MemTable) Add(seq uint64, valueType internal.ValueType, key, value []byte) {
 	internalKey := internal.NewInternalKey(seq, valueType, key, value)
 
-	memTable.memoryUsage += uint64(16 + len(key) + len(value))
-	memTable.table.Insert(internalKey)
+	memTable.memoryUsage += uint64(16 + len(key) + len(value)) //内存使用量
+	memTable.table.Insert(internalKey)                         //往跳表里面插入数据
 }
 
 func (memTable *MemTable) Get(key []byte) ([]byte, error) {
@@ -39,7 +39,7 @@ func (memTable *MemTable) Get(key []byte) ([]byte, error) {
 		if internal.UserKeyComparator(key, internalKey.UserKey) == 0 { //等于0说明key和internalKey中的userKey相等
 			// 判断valueType
 			if internalKey.Type == internal.TypeValue {
-				return internalKey.UserValue, nil
+				return internalKey.UserValue, nil //这里面把value的值放置到internalKey的结构体里面了
 			} else {
 				return nil, internal.ErrDeletion
 			}

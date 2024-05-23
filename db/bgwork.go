@@ -11,9 +11,9 @@ import (
 
 func (db *Db) maybeScheduleCompaction() {
 	if db.bgCompactionScheduled { // 最多只发起一个后台协程来写数据
-		return
+		return //如果compaction正在被调度的话就直接返回，先不进行compaction操作
 	}
-	db.bgCompactionScheduled = true
+	db.bgCompactionScheduled = true //进行compaction操作
 	go func() {
 		db.mu.Lock()
 		defer db.mu.Unlock()
@@ -33,10 +33,10 @@ func (db *Db) backgroundCompaction() {
 	// minor compaction：写imm到sstable，L0文件之间是没有关系的。
 	// 如果发现sstable可以属于L1的sstable子集，优先向下合并。
 	if imm != nil {
-		version.WriteLevel0Table(imm)
+		version.WriteLevel0Table(imm) //flush过程。把文件内容放置到version的文件集合里面
 	}
 	// major compaction：合并，L1之后的sstable文件之前是单调增的
-	for version.DoCompactionWork() {
+	for version.DoCompactionWork() { //里面会判断是否需要进行sst的compact，如果需要，则一直进行这个for循环操作
 		// 每次合并后打印下version信息，除了看，没啥用
 		version.Log()
 	}
@@ -45,11 +45,11 @@ func (db *Db) backgroundCompaction() {
 	// 更新CURRENT文件内容
 	db.SetCurrentFile(descriptorNumber)
 	//db.mu.Lock()
-	db.imm = nil
+	db.imm = nil //imm中的数据flush到磁盘完毕之后，把imm清空
 	db.current = version
 }
 
-//更新current文件里面的值，为了保证原子操作，此处用mv来实现
+// 更新current文件里面的值，为了保证原子操作，此处用mv来实现
 func (db *Db) SetCurrentFile(descriptorNumber uint64) {
 	tmp := internal.TempFileName(db.name, descriptorNumber)
 	ioutil.WriteFile(tmp, []byte(fmt.Sprintf("%d", descriptorNumber)), 0600)

@@ -15,13 +15,14 @@ type TableBuilder struct {
 	file               *os.File
 	offset             uint32
 	numEntries         int32
-	dataBlockBuilder   block.BlockBuilder
-	indexBlockBuilder  block.BlockBuilder
+	dataBlockBuilder   block.BlockBuilder //data block
+	indexBlockBuilder  block.BlockBuilder //index block
 	pendingIndexEntry  bool
 	pendingIndexHandle IndexBlockHandle
 	status             error
 }
 
+// NewTableBuilder 构建内存形式的sst对象
 func NewTableBuilder(fileName string) *TableBuilder {
 	var builder TableBuilder
 	var err error
@@ -39,6 +40,7 @@ func (builder *TableBuilder) FileSize() uint32 {
 
 func (builder *TableBuilder) Add(internalKey *internal.InternalKey) {
 	if builder.status != nil {
+		//table builder写入到磁盘之后，status字段的值才不会为空
 		return
 	}
 	if builder.pendingIndexEntry {
@@ -85,6 +87,7 @@ func (builder *TableBuilder) Finish() error {
 	return nil
 }
 
+// 往table builder里面写入各种block信息
 func (builder *TableBuilder) writeblock(blockBuilder *block.BlockBuilder) BlockHandle {
 	content := blockBuilder.Finish()
 	// todo : compress, crc

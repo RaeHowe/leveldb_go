@@ -122,12 +122,13 @@ func (db *Db) makeRoomForWrite() (uint64, error) {
 	defer db.mu.Unlock()
 
 	for true {
-		if db.current.NumLevelFiles(0) >= internal.L0_SlowdownWritesTrigger {
+		if db.current.NumLevelFiles(0) >= internal.L0_SlowdownWritesTrigger { //如果sst第0层的文件数大于L0_SlowdownWritesTrigger的话，就降低写入速度
 			// L0超过8个文件就写的慢一点，后台merge跟不上，并且L0文件之间是无序的
 			db.mu.Unlock()
 			time.Sleep(time.Duration(1000) * time.Microsecond)
 			db.mu.Lock()
 		} else if db.mem.ApproximateMemoryUsage() <= internal.Write_buffer_size {
+			// memtable的内存大小如果达到了阈值(Write_buffer_size)的话，就新建一个memtable出来，并且把这个memtable转换为immutable
 			// mem还没达到阈值，可以继续写
 			return db.current.NextSeq(), nil
 		} else if db.imm != nil {
@@ -136,8 +137,8 @@ func (db *Db) makeRoomForWrite() (uint64, error) {
 		} else {
 			// mem达到阈值，且没有imm时候，需要持久化到sstable
 			db.imm = db.mem
-			db.mem = memtable.New()
-			db.maybeScheduleCompaction()
+			db.mem = memtable.New()      //新建一个memtable出来
+			db.maybeScheduleCompaction() //触发sst文件的compaction操作
 		}
 	}
 
